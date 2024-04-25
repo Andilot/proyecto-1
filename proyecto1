@@ -1,0 +1,188 @@
+from google.colab import drive
+drive.mount('/content/drive')#abre el documento
+#############################################################################
+#recuerda correr el codigo de arriba y revisar bien la ubicacion del archivo
+#############################################################################
+import math
+import pandas as pd
+
+def nanstrdetector (lista):# En una lista, transforma nan's a -1 (para denotar nan's) y transforma cadenas a enteros
+############################ tambien, despues de transformar todo a enteros, hace listas de listas para poder manejar precedencias multiples
+
+    lista_posicion = 0
+    for i in lista:
+      if type(i) == int:
+        lista[lista_posicion] = [i]
+
+      if type(i) != str:
+        bool = math.isnan(float(i))
+      if bool:
+        lista[lista_posicion] = [int(-1)]
+
+      if type(i) == str:
+        lista[lista_posicion]=list(i.split(", "))#crea la lista de varios precedentes
+        lista_posicion2 = 0
+        for j in lista[lista_posicion]: #transforma los precedentes a enteros
+
+          (lista[lista_posicion])[lista_posicion2]=int(j)
+          lista_posicion2 = lista_posicion2 + 1
+
+      lista_posicion = lista_posicion + 1
+
+    return lista
+
+def scanner():#lee el documento y guarda los datos en 4 listas separadas
+
+
+    excel_data_df = pd.read_excel('/content/drive/My Drive/Creacion_de_la_carrera_de_mat_ap.xlsx')
+
+    list_act = excel_data_df['Actividad'].tolist()
+    list_desc = excel_data_df['Descripcion'].tolist()
+    list_prec = excel_data_df['Precedentes'].tolist()
+    list_dur = excel_data_df['Duracion'].tolist()
+
+    nanstrdetector(list_prec)
+    nanstrdetector(list_dur)
+
+    return list_act, list_desc, list_prec, list_dur
+
+def tiempomin(actividad, list_act, list_desc, list_prec, list_dur):#busca el camino mas directo al nodo y guarda el tiempo necesario para hacerlo
+
+  def recursion(c, list_act, list_prec, list_dur, list_usados, t):#repite el proceso de guardado de tiempo y busqueda recursivamente
+
+#los for recorren las listas y comparan predecesores con numero de actividad
+    for j in list_prec[c]:
+        lista_posicion = 0
+
+        for k in list_act:
+
+          if k == j and k not in list_usados:
+
+            t = t + (list_dur[lista_posicion])[0]
+            list_usados.append(list_act[lista_posicion])#para no guardar dos veces el mismo nodo
+
+            t = recursion(lista_posicion, list_act, list_prec, list_dur, list_usados, t)
+
+          else:
+            lista_posicion = lista_posicion + 1
+
+    return t
+
+  lista_posicion3 = 0
+
+  t = 0
+  list_usados = []
+  #el caso base, saca el tiempo del primer nodo, el que le das e inicia la recursion
+  for i in list_desc:
+    if i == actividad:#encuentra el nodo requerido
+
+
+      t = (list_dur[lista_posicion3])[0]#tiempo
+      list_usados.append(list_act[lista_posicion3])
+
+      t = recursion(lista_posicion3, list_act, list_prec, list_dur, list_usados, t)
+
+    else:
+      lista_posicion3 = lista_posicion3 + 1
+
+  return t
+
+#la siguiente funcion opera bajo el principio de que el tiempo maximo sale si evitamos la tarea hasta no tener de otra, en otras palabras, hasta que los unicos nodos
+#que quedan son los que no se pueden hacer sin hacer el que nos piden
+#tiempo = tiempo min del ultimo nodo - tiempo de nodos imposibles
+def tiempomax(actividad, list_act, list_desc, list_prec, list_dur):
+  t1 = tiempomin(list_desc[len(list_desc)-1], list_act, list_desc, list_prec, list_dur)
+  def recursion2(list_act, list_prec, list_dur, list_imposibles, t):
+
+
+    b = 0 #list_posicion_4
+
+    for j in list_prec:
+
+      for k in j:
+
+        if k in list_imposibles and list_act[b]!=0:#evita nodos ya registrados
+
+            t = t + (list_dur[b])[0]
+            list_imposibles.append(list_act[b])
+            list_act[b] = 0
+            list_desc[b] = "0"
+            list_prec[b] = [0]
+            list_dur[b] = [0]
+
+            t = recursion2(list_act, list_prec, list_dur, list_imposibles, t)
+
+
+      b = b + 1
+
+    return t
+  a = 0 #list_posicion_5
+
+  t = 0
+
+  list_imposibles = []
+
+  #para eliminar todos los casos de multiples nodos finales
+  list_prec.append(list_act)
+  list_act.append(len(list_act)+1)
+  list_desc.append("finalqwert")
+  list_dur.append([0])
+
+  for i in list_desc:
+    if i == actividad:
+
+      list_imposibles.append(list_act[a]) #con esto se buscaran los que tengan este nodo de precedente
+      list_act[a] = 0 #se elimina el nodo de la lista para evitar recursion infinita (el codigo lee las listas de izquierda a derecha
+      ################ y siempre encuentra al mismo nodo en list_imposibles y no lee los demas)
+      list_desc[a] = "0"
+      list_prec[a] = [0]
+      list_dur[a] = [0]
+      t = recursion2(list_act, list_prec, list_dur, list_imposibles, t)
+
+    else:
+      a=a+1
+
+  t = t1 - t #calculo del tiempo max
+
+
+  return t
+
+list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
+
+z11=list_desc_1
+for i in z11:
+  list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner() #el codigo max siempre elimina las listas (no pudimos corregirlo)
+  t1 = tiempomin(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
+  list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
+  t2 = tiempomax(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
+  print("minimo:", t1, "maximo:", t2)
+
+def generar_reporte(minimos, criticas):
+    with open('/content/drive/My Drive/Reporte_proyecto.txt', 'w') as file:
+        file.write("Tiempo mínimo necesario para la elaboración del proyecto: {}\n".format(minimos))
+        file.write("Actividades críticas:\n")
+        for actividad in criticas:
+            file.write("{}\n".format(actividad))
+
+z11 = list_desc_1
+minimos_totales = 0
+criticas_totales = []
+
+for i in z11:
+    list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
+    t1 = tiempomin(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
+    minimos_totales += t1
+    list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
+    t2 = tiempomax(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
+    if t1 == t2:
+        criticas_totales.append(i)
+
+generar_reporte(minimos_totales, criticas_totales)
+
+with open('/content/drive/My Drive/Reporte_tiempo_minimo.txt', 'w') as f:
+    f.write("Reporte de Tiempo Mínimo Necesitado para la Elaboración del Proyecto:\n\n")
+    for i, actividad in enumerate(z11):
+        list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
+        tiempo_minimo = tiempomin(actividad, list_act_1, list_desc_1, list_prec_1, list_dur_1)
+        f.write(f"Actividad {i+1} - {actividad}: Tiempo mínimo necesario: {tiempo_minimo} unidades de tiempo\n")
+    print("Reporte generado con éxito.")
