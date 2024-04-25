@@ -156,29 +156,7 @@ for i in z11:
   list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
   t2 = tiempomax(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
   print("minimo:", t1, "maximo:", t2)
-
-def generar_reporte(minimos, criticas):
-    with open('/content/drive/My Drive/Reporte_proyecto.txt', 'w') as file:
-        file.write("Tiempo mínimo necesario para la elaboración del proyecto: {}\n".format(minimos))
-        file.write("Actividades críticas:\n")
-        for actividad in criticas:
-            file.write("{}\n".format(actividad))
-
-z11 = list_desc_1
-minimos_totales = 0
-criticas_totales = []
-
-for i in z11:
-    list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
-    t1 = tiempomin(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
-    minimos_totales += t1
-    list_act_1, list_desc_1, list_prec_1, list_dur_1 = scanner()
-    t2 = tiempomax(i, list_act_1, list_desc_1, list_prec_1, list_dur_1)
-    if t1 == t2:
-        criticas_totales.append(i)
-
-generar_reporte(minimos_totales, criticas_totales)
-
+#####################################################################################################################################
 with open('/content/drive/My Drive/Reporte_tiempo_minimo.txt', 'w') as f:
     f.write("Reporte de Tiempo Mínimo Necesitado para la Elaboración del Proyecto:\n\n")
     for i, actividad in enumerate(z11):
